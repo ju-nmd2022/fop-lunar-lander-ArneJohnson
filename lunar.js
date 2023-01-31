@@ -7,19 +7,30 @@ let playerRotation;
 let vel;
 const maxSpeed = -20;
 let isAlive;
+let isPlayerExplode;
+let isThrusting;
+let explosionRadius;
 
 // Level
 let worldX;
 let worldY;
 let goalX;
 let goalY;
-let goalRadius = 300;
+const gravity = 9.18;
+const goalRadius = 300;
 let asteroids = [];
-let asteroidRadius = 50;
-let asteroidRangeX = 8000;
-let asteroidRangeY = -10000;
+const asteroidRadius = 50;
+const asteroidRangeX = 8000;
+const asteroidRangeY = -10000;
+let bg;
 
 let i;
+let tempX;
+let tempY;
+
+function preload() {
+  bg = loadImage("assets/Space.jpg");
+}
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight);
@@ -28,10 +39,10 @@ function setup() {
   worldX = 0;
   worldY = 0;
   isAlive = true;
+  isPlayerExplode = false;
+  isThrusting = false;
+  explosionRadius = 1;
   asteroids = [];
-
-  let tempX;
-  let tempY;
 
   // Level generation
   for (i = 1; i < 500; i++) {
@@ -42,7 +53,7 @@ function setup() {
     asteroids.push(tempY);
   }
   goalX = (Math.random() - 0.5) * asteroidRangeX;
-  goalY = Math.random() * asteroidRangeY + 7000 - 7000;
+  goalY = Math.random() * (asteroidRangeY + 6000) - 6000;
 }
 
 function draw() {
@@ -50,7 +61,8 @@ function draw() {
   update();
 
   // Level
-  background(22, 22, 22);
+  background(7, 9, 10);
+  image(bg, 0, asteroidRangeY + worldY + 510);
   floor();
   for (i = 0; i < asteroids.length; i += 3) {
     asteroids[i](asteroids[i + 1], asteroids[i + 2]);
@@ -61,6 +73,9 @@ function draw() {
     ship(playerRotation);
     radar(goalX, goalY);
   } else {
+    if (isPlayerExplode == false) {
+      explosion();
+    }
     gameOverText();
   }
 
@@ -81,11 +96,13 @@ function update() {
     // Thrusters
     if (keyIsDown(UP_ARROW)) {
       vel = vel * 1.02 - 0.2;
+      isThrusting = true;
       if (vel < maxSpeed) {
         vel = maxSpeed;
       }
     } else {
       vel = vel * 0.99;
+      isThrusting = false;
     }
     if (keyIsDown(DOWN_ARROW)) {
       vel += 0.5;
@@ -98,6 +115,16 @@ function update() {
   // Reset
   if (keyIsDown(BACKSPACE)) {
     setup();
+  }
+
+  // Asteroid movement
+  for (i = 1; i < asteroids.length; i += 3) {
+    if (Math.random() > 0.8) {
+      asteroids[i] += Math.random() * 8 - 4;
+    }
+    if (Math.random() > 0.8) {
+      asteroids[i + 1] += Math.random() * 8 - 4;
+    }
   }
 
   // Collision
@@ -114,17 +141,78 @@ function update() {
 
 function ship(playerRotation) {
   push();
-  translate(canvasWidth / 2, canvasHeight / 2 + 75);
+  translate(canvasWidth / 2, canvasHeight / 2 + 35);
   rotate(playerRotation);
   noStroke();
+  fill(255, 150, 100);
+  beginShape();
+  vertex(35, -25);
+  bezierVertex(35, -25, 35, -110, 0, -120);
+  bezierVertex(0, -120, -35, -110, -35, -25);
+  vertex(-35, 30);
+  vertex(35, 30);
+  endShape();
+
+  fill(100, 100, 100);
+  rect(-35, 40, 70, 25);
+
   fill(255, 255, 255);
-  rect(-25, -25, 50);
+  rect(34, -80, 12, 130);
+  ellipse(40, -80, 12);
+  rect(-46, -80, 12, 130);
+  ellipse(-40, -80, 12);
+
+  stroke(220, 220, 220);
+  strokeWeight(3);
+  beginShape();
+  vertex(-25, 10);
+  vertex(-50, 40);
+  vertex(-55, 60);
+  vertex(-25, 50);
+  vertex(25, 50);
+  vertex(55, 60);
+  vertex(50, 40);
+  vertex(25, 10);
+  vertex(25, -25);
+  bezierVertex(25, -25, 25, -60, 0, -75);
+  bezierVertex(0, -75, -25, -60, -25, -25);
+  vertex(-25, 10);
+  endShape();
+
+  fill(50, 200, 255);
+  noStroke();
+  beginShape();
+  vertex(-15, -30);
+  bezierVertex(-15, -30, -15, -40, 0, -40);
+  bezierVertex(0, -40, 15, -40, 15, -30);
+  bezierVertex(15, -30, 0, -40, -15, -30);
+  endShape();
+
+  if (isThrusting) {
+    fill(255, 100, 100);
+    beginShape();
+    vertex(0, 70);
+    bezierVertex(0, 70, 40, 70, 0, 120);
+    bezierVertex(0, 120, -40, 70, 0, 70);
+    endShape();
+
+    push();
+    scale(0.6);
+    translate(0, 55);
+    fill(255, 150, 100);
+    beginShape();
+    vertex(0, 70);
+    bezierVertex(0, 70, 40, 70, 0, 120);
+    bezierVertex(0, 120, -40, 70, 0, 70);
+    endShape();
+    pop();
+  }
   pop();
 }
 
 function radar(goalX, goalY) {
-  let tempX = goalX - (canvasWidth / 2 - worldX);
-  let tempY = goalY - (canvasHeight / 2 - worldY);
+  tempX = goalX - (canvasWidth / 2 - worldX);
+  tempY = goalY - (canvasHeight / 2 - worldY);
   let distance = Math.floor(Math.sqrt(tempX * tempX + tempY * tempY));
   let radarRotation = -Math.acos(tempX / distance) + HALF_PI;
   if (goalY > -worldY + goalRadius) {
@@ -132,19 +220,26 @@ function radar(goalX, goalY) {
   }
 
   push();
-  translate(canvasWidth / 2 + 50, canvasHeight / 2 - 20);
-  stroke(255, 255, 255);
+  translate(canvasWidth / 2 + 130, canvasHeight / 2 - 30);
   rotate(radarRotation);
+  stroke(255, 255, 255);
+  fill(255, 255, 255);
   beginShape();
   vertex(0, 0);
   vertex(-25, 10);
   vertex(0, -25);
+  endShape();
+  stroke(230, 230, 230);
+  fill(230, 230, 230);
+  beginShape();
   vertex(25, 10);
+  vertex(0, -25);
+  vertex(0, 0);
   endShape();
   pop();
 
   push();
-  translate(canvasWidth / 2, canvasHeight / 2);
+  translate(canvasWidth / 2 + 75, canvasHeight / 2 - 10);
   textSize(18);
   textFont("LEMON MILK");
   textAlign(CENTER, CENTER);
@@ -215,4 +310,31 @@ function createAsteroid(x, y) {
   fill(255, 255, 255);
   ellipse(worldX, worldY, asteroidRadius);
   pop();
+}
+
+function explosion() {
+  push();
+  noStroke();
+  translate(canvasWidth / 2, canvasHeight / 2 + 75);
+
+  fill(255, 100, 100);
+  rect(-explosionRadius / 2, -explosionRadius / 2, explosionRadius);
+  rotate(HALF_PI / 2);
+  rect(-explosionRadius / 2, -explosionRadius / 2, explosionRadius);
+
+  fill(255, 150, 100);
+  rect(-explosionRadius / 3, -explosionRadius / 3, explosionRadius / 1.5);
+  rotate(HALF_PI / 2);
+  rect(-explosionRadius / 3, -explosionRadius / 3, explosionRadius / 1.5);
+
+  fill(255, 200, 100);
+  rect(-explosionRadius / 6, -explosionRadius / 6, explosionRadius / 3);
+  rotate(HALF_PI / 2);
+  rect(-explosionRadius / 6, -explosionRadius / 6, explosionRadius / 3);
+  pop();
+  if (explosionRadius > 120) {
+    isPlayerExplode = true;
+  } else {
+    explosionRadius += 15;
+  }
 }
