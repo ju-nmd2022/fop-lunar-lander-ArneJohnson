@@ -5,13 +5,21 @@ const canvasHeight = 800;
 // Player
 let playerRotation;
 let vel;
-const maxSpeed = -30;
+const maxSpeed = -20;
+let isAlive;
 
 // Level
 let worldX;
 let worldY;
 let goalX;
 let goalY;
+let goalRadius = 300;
+let asteroids = [];
+let asteroidRadius = 50;
+let asteroidRangeX = 8000;
+let asteroidRangeY = -10000;
+
+let i;
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight);
@@ -19,47 +27,71 @@ function setup() {
   vel = 0;
   worldX = 0;
   worldY = 0;
+  isAlive = true;
+  asteroids = [];
 
-  // Defined for testing purposes, will be random later
-  goalX = 100;
-  goalY = 100;
+  let tempX;
+  let tempY;
+
+  // Level generation
+  for (i = 1; i < 500; i++) {
+    tempX = (Math.random() - 0.5) * asteroidRangeX;
+    tempY = Math.random() * (asteroidRangeY + 300) - 300;
+    asteroids.push(createAsteroid);
+    asteroids.push(tempX);
+    asteroids.push(tempY);
+  }
+  goalX = (Math.random() - 0.5) * asteroidRangeX;
+  goalY = Math.random() * asteroidRangeY + 7000 - 7000;
 }
 
 function draw() {
   clear();
   update();
 
+  // Level
   background(22, 22, 22);
   floor();
-  ship(playerRotation);
-  radar(goalX, goalY);
+  for (i = 0; i < asteroids.length; i += 3) {
+    asteroids[i](asteroids[i + 1], asteroids[i + 2]);
+  }
+
+  // Player
+  if (isAlive) {
+    ship(playerRotation);
+    radar(goalX, goalY);
+  } else {
+    gameOverText();
+  }
 
   // Testing goal
-  ellipse(goalX + worldX, goalY + worldY, 100);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius);
 }
 
 function update() {
-  // Rotation
-  if (keyIsDown(LEFT_ARROW)) {
-    playerRotation -= 0.1;
-  }
-  if (keyIsDown(RIGHT_ARROW)) {
-    playerRotation += 0.1;
-  }
-
-  // Thrusters
-  if (keyIsDown(UP_ARROW)) {
-    vel = vel * 1.05 - 0.2;
-    if (vel < maxSpeed) {
-      vel = maxSpeed;
+  if (isAlive) {
+    // Rotation
+    if (keyIsDown(LEFT_ARROW)) {
+      playerRotation -= 0.1;
     }
-  } else {
-    vel = vel * 0.99;
-  }
-  if (keyIsDown(DOWN_ARROW)) {
-    vel += 0.5;
-    if (vel > 0) {
-      vel = 0;
+    if (keyIsDown(RIGHT_ARROW)) {
+      playerRotation += 0.1;
+    }
+
+    // Thrusters
+    if (keyIsDown(UP_ARROW)) {
+      vel = vel * 1.02 - 0.2;
+      if (vel < maxSpeed) {
+        vel = maxSpeed;
+      }
+    } else {
+      vel = vel * 0.99;
+    }
+    if (keyIsDown(DOWN_ARROW)) {
+      vel += 0.5;
+      if (vel > 0) {
+        vel = 0;
+      }
     }
   }
 
@@ -72,6 +104,7 @@ function update() {
   if (worldY < 0) {
     worldY = 0;
     vel = 0;
+    isAlive = false;
   }
 
   playerRotation = playerRotation % (2 * PI);
@@ -90,11 +123,11 @@ function ship(playerRotation) {
 }
 
 function radar(goalX, goalY) {
-  let tempX = goalX - 50 - (canvasWidth / 2 - worldX);
-  let tempY = goalY - 50 - (canvasHeight / 2 - worldY);
+  let tempX = goalX - (canvasWidth / 2 - worldX);
+  let tempY = goalY - (canvasHeight / 2 - worldY);
   let distance = Math.floor(Math.sqrt(tempX * tempX + tempY * tempY));
   let radarRotation = -Math.acos(tempX / distance) + HALF_PI;
-  if (tempY > goalY - 100) {
+  if (goalY > -worldY + goalRadius) {
     radarRotation = Math.acos(tempX / distance) + HALF_PI;
   }
 
@@ -158,5 +191,28 @@ function floor() {
   text("Rotate ship", 195 + worldX, 730 + worldY);
   text("Brake", 370 + worldX, 730 + worldY);
   text("Press backspace to restart", 50 + worldX, 780 + worldY);
+  pop();
+}
+
+function gameOverText() {
+  push();
+  translate(canvasWidth / 2, canvasHeight / 2);
+  textFont("LEMON MILK");
+  textAlign(CENTER, CENTER);
+  noStroke();
+  fill(255, 255, 255);
+  textSize(36);
+  text("game over", 0, 0);
+  textSize(18);
+  text("Press backspace to restart", 0, 40);
+  pop();
+}
+
+function createAsteroid(x, y) {
+  push();
+  translate(x, y);
+  noStroke();
+  fill(255, 255, 255);
+  ellipse(worldX, worldY, asteroidRadius);
   pop();
 }
