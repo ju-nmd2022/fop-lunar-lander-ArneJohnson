@@ -3,6 +3,10 @@ const canvasWidth = 800;
 const canvasHeight = 800;
 
 // Player
+let playerX;
+let playerY;
+let playerHeight;
+let playerWidth;
 let playerRotation;
 let vel;
 const maxSpeed = -20;
@@ -16,13 +20,15 @@ let worldX;
 let worldY;
 let goalX;
 let goalY;
-const gravity = 9.18;
-const goalRadius = 300;
+const goalRadius = 1000;
 let asteroids = [];
-const asteroidRadius = 50;
-const asteroidRangeX = 8000;
+const asteroidRadius = 80;
+const asteroidRangeX = 12000;
 const asteroidRangeY = -10000;
+const asteroidAmount = 839;
+let randomSize;
 let bg;
+let gameWon;
 
 let i;
 let tempX;
@@ -43,98 +49,49 @@ function setup() {
   isThrusting = false;
   explosionRadius = 1;
   asteroids = [];
+  gameWon = false;
 
   // Level generation
-  for (i = 1; i < 500; i++) {
+  for (i = 0; i < asteroidAmount; i++) {
     tempX = (Math.random() - 0.5) * asteroidRangeX;
     tempY = Math.random() * (asteroidRangeY + 300) - 300;
-    asteroids.push(createAsteroid);
+    randomSize = (Math.random() + 0.5) * asteroidRadius;
     asteroids.push(tempX);
     asteroids.push(tempY);
+    asteroids.push(randomSize);
   }
   goalX = (Math.random() - 0.5) * asteroidRangeX;
-  goalY = Math.random() * (asteroidRangeY + 6000) - 6000;
+  goalY = Math.random() * (asteroidRangeY + 7000) - 7000;
 }
 
 function draw() {
   clear();
   update();
 
-  // Level
   background(7, 9, 10);
   image(bg, 0, asteroidRangeY + worldY + 510);
   floor();
-  for (i = 0; i < asteroids.length; i += 3) {
-    asteroids[i](asteroids[i + 1], asteroids[i + 2]);
-  }
+  for (i = 0; i < asteroidAmount; i += 3)
+    createAsteroid(asteroids[i], asteroids[i + 1], asteroids[i + 2]);
+  moon();
 
   // Player
   if (isAlive) {
     ship(playerRotation);
-    radar(goalX, goalY);
+    if (gameWon == false) radar(goalX, goalY);
   } else {
     if (isPlayerExplode == false) {
       explosion();
     }
     gameOverText();
   }
-
-  // Testing goal
-  ellipse(goalX + worldX, goalY + worldY, goalRadius);
 }
 
 function update() {
-  if (isAlive) {
-    // Rotation
-    if (keyIsDown(LEFT_ARROW)) {
-      playerRotation -= 0.1;
-    }
-    if (keyIsDown(RIGHT_ARROW)) {
-      playerRotation += 0.1;
-    }
+  keyboardControlls();
 
-    // Thrusters
-    if (keyIsDown(UP_ARROW)) {
-      vel = vel * 1.02 - 0.2;
-      isThrusting = true;
-      if (vel < maxSpeed) {
-        vel = maxSpeed;
-      }
-    } else {
-      vel = vel * 0.99;
-      isThrusting = false;
-    }
-    if (keyIsDown(DOWN_ARROW)) {
-      vel += 0.5;
-      if (vel > 0) {
-        vel = 0;
-      }
-    }
-  }
+  collisionUpdate();
 
-  // Reset
-  if (keyIsDown(BACKSPACE)) {
-    setup();
-  }
-
-  // Asteroid movement
-  for (i = 1; i < asteroids.length; i += 3) {
-    if (Math.random() > 0.8) {
-      asteroids[i] += Math.random() * 8 - 4;
-    }
-    if (Math.random() > 0.8) {
-      asteroids[i + 1] += Math.random() * 8 - 4;
-    }
-  }
-
-  // Collision
-  if (worldY < 0) {
-    worldY = 0;
-    vel = 0;
-    isAlive = false;
-  }
-
-  playerRotation = playerRotation % (2 * PI);
   worldY -= Math.cos(playerRotation) * vel;
   worldX += Math.sin(playerRotation) * vel;
 }
@@ -143,7 +100,8 @@ function ship(playerRotation) {
   push();
   translate(canvasWidth / 2, canvasHeight / 2 + 35);
   rotate(playerRotation);
-  noStroke();
+  stroke(55, 55, 55);
+  strokeWeight(4);
   fill(255, 150, 100);
   beginShape();
   vertex(35, -25);
@@ -153,17 +111,31 @@ function ship(playerRotation) {
   vertex(35, 30);
   endShape();
 
+  push();
+  fill(255, 180, 140);
+  noStroke();
+  beginShape();
+  vertex(30, -25);
+  bezierVertex(30, -25, 35, -110, 0, -118);
+  vertex(0, 30);
+  vertex(35, 30);
+  endShape();
+  pop();
+
   fill(100, 100, 100);
   rect(-35, 40, 70, 25);
 
   fill(255, 255, 255);
-  rect(34, -80, 12, 130);
   ellipse(40, -80, 12);
-  rect(-46, -80, 12, 130);
+  rect(34, -80, 12, 130);
   ellipse(-40, -80, 12);
+  rect(-46, -80, 12, 130);
+  push();
+  noStroke();
+  ellipse(40, -80, 8.5);
+  ellipse(-40, -80, 8.5);
+  pop();
 
-  stroke(220, 220, 220);
-  strokeWeight(3);
   beginShape();
   vertex(-25, 10);
   vertex(-50, 40);
@@ -189,7 +161,7 @@ function ship(playerRotation) {
   endShape();
 
   if (isThrusting) {
-    fill(255, 100, 100);
+    fill(255, 80, 80);
     beginShape();
     vertex(0, 70);
     bezierVertex(0, 70, 40, 70, 0, 120);
@@ -199,7 +171,7 @@ function ship(playerRotation) {
     push();
     scale(0.6);
     translate(0, 55);
-    fill(255, 150, 100);
+    fill(240, 170, 80);
     beginShape();
     vertex(0, 70);
     bezierVertex(0, 70, 40, 70, 0, 120);
@@ -212,9 +184,11 @@ function ship(playerRotation) {
 
 function radar(goalX, goalY) {
   tempX = goalX - (canvasWidth / 2 - worldX);
-  tempY = goalY - (canvasHeight / 2 - worldY);
+  tempY = goalY - (canvasHeight / 2 - worldY + goalRadius / 2);
+
   let distance = Math.floor(Math.sqrt(tempX * tempX + tempY * tempY));
   let radarRotation = -Math.acos(tempX / distance) + HALF_PI;
+
   if (goalY > -worldY + goalRadius) {
     radarRotation = Math.acos(tempX / distance) + HALF_PI;
   }
@@ -222,7 +196,18 @@ function radar(goalX, goalY) {
   push();
   translate(canvasWidth / 2 + 130, canvasHeight / 2 - 30);
   rotate(radarRotation);
-  stroke(255, 255, 255);
+
+  stroke(55, 55, 55);
+  strokeWeight(8);
+  beginShape();
+  vertex(0, 0);
+  vertex(-25, 10);
+  vertex(0, -25);
+  vertex(25, 10);
+  vertex(0, 0);
+  endShape();
+
+  strokeWeight(0);
   fill(255, 255, 255);
   beginShape();
   vertex(0, 0);
@@ -243,7 +228,8 @@ function radar(goalX, goalY) {
   textSize(18);
   textFont("LEMON MILK");
   textAlign(CENTER, CENTER);
-  noStroke();
+  stroke(55, 55, 55);
+  strokeWeight(4);
   fill(255, 255, 255);
   text(distance + "m", 50, 30);
   pop();
@@ -251,12 +237,14 @@ function radar(goalX, goalY) {
 
 function floor() {
   push();
-  noStroke();
+  stroke(95, 148, 89);
+  strokeWeight(10);
   fill(120, 180, 100);
-  rect(0, 500 + worldY, canvasWidth, 300);
+  rect(-50, 500 + worldY, canvasWidth + 100, 350);
 
   textFont("LEMON MILK");
   textAlign(LEFT, CENTER);
+  noStroke();
 
   fill(150, 255, 150);
   textSize(32);
@@ -281,6 +269,7 @@ function floor() {
   text(">", 258 + worldX, 690 + worldY);
   textSize(36);
   text("v", 380 + worldX, 690 + worldY);
+
   textSize(14);
   text("Thruster", 50 + worldX, 730 + worldY);
   text("Rotate ship", 195 + worldX, 730 + worldY);
@@ -294,7 +283,8 @@ function gameOverText() {
   translate(canvasWidth / 2, canvasHeight / 2);
   textFont("LEMON MILK");
   textAlign(CENTER, CENTER);
-  noStroke();
+  stroke(55, 55, 55);
+  strokeWeight(8);
   fill(255, 255, 255);
   textSize(36);
   text("game over", 0, 0);
@@ -303,12 +293,18 @@ function gameOverText() {
   pop();
 }
 
-function createAsteroid(x, y) {
+function createAsteroid(x, y, size) {
   push();
   translate(x, y);
+  stroke(120, 120, 120);
+  strokeWeight(size / 14);
+  fill(180, 180, 180);
+  ellipse(worldX, worldY, size);
   noStroke();
-  fill(255, 255, 255);
-  ellipse(worldX, worldY, asteroidRadius);
+  fill(160, 160, 160);
+  ellipse(worldX - size / 6, worldY - size / 6, size / 3);
+  ellipse(worldX, worldY + size / 4, size / 4);
+  ellipse(worldX + size / 4, worldY - size / 8, size / 5);
   pop();
 }
 
@@ -336,5 +332,153 @@ function explosion() {
     isPlayerExplode = true;
   } else {
     explosionRadius += 15;
+  }
+}
+
+function moon() {
+  push();
+  noStroke();
+  fill(255, 255, 255, 2);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius * 4);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius * 3.5);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius * 3);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius * 2.5);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius * 2);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius * 1.5);
+  fill(255, 255, 255);
+  stroke(189, 195, 209);
+  strokeWeight(10);
+  ellipse(goalX + worldX, goalY + worldY, goalRadius);
+  noStroke();
+  fill(189, 195, 209);
+  beginShape();
+  vertex(goalX + worldX, goalY + worldY - goalRadius / 2);
+  bezierVertex(
+    goalX + worldX,
+    goalY + worldY - goalRadius / 2,
+    goalX + goalRadius / 2 + worldX,
+    goalY + goalRadius / 6 + worldY,
+    goalX + worldX,
+    goalY + worldY + goalRadius / 2
+  );
+  bezierVertex(
+    goalX + worldX,
+    goalY + worldY + goalRadius / 2,
+    goalX + goalRadius / 2 + worldX,
+    goalY + goalRadius / 2 + worldY,
+    goalX + worldX + goalRadius / 2,
+    goalY + worldY
+  );
+  bezierVertex(
+    goalX + worldX + goalRadius / 2,
+    goalY + worldY,
+    goalX + goalRadius / 2 + worldX,
+    goalY - goalRadius / 2 + worldY,
+    goalX + worldX,
+    goalY + worldY - goalRadius / 2
+  );
+  endShape();
+  stroke(255, 255, 255);
+  ellipse(goalX + worldX - 320, goalY + worldY - 150, goalRadius / 6);
+  ellipse(goalX + worldX + 250, goalY + worldY + 200, goalRadius / 9);
+  ellipse(goalX + worldX + 200, goalY + worldY - 200, goalRadius / 8);
+  ellipse(goalX + worldX - 150, goalY + worldY + 180, goalRadius / 4);
+
+  if (gameWon == false) {
+    fill(237, 236, 197, 150);
+    noStroke();
+    ellipse(goalX + worldX, goalY + worldY - goalRadius / 2 + 5, 150, 20);
+    stroke(237, 236, 197);
+    strokeWeight(6);
+    line(
+      goalX + worldX,
+      goalY + worldY - goalRadius / 2 - 30,
+      goalX + worldX - 20,
+      goalY + worldY - goalRadius / 2 - 50
+    );
+    line(
+      goalX + worldX,
+      goalY + worldY - goalRadius / 2 - 30,
+      goalX + worldX + 20,
+      goalY + worldY - goalRadius / 2 - 50
+    );
+  }
+  pop();
+}
+
+function keyboardControlls() {
+  if (isAlive && gameWon == false) {
+    // Rotation
+    if (keyIsDown(LEFT_ARROW)) {
+      playerRotation -= 0.1;
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
+      playerRotation += 0.1;
+    }
+    playerRotation = playerRotation % (2 * PI);
+
+    // Thrusters
+    if (keyIsDown(UP_ARROW)) {
+      vel = vel * 1.01 - 0.1;
+      isThrusting = true;
+      if (vel < maxSpeed) {
+        vel = maxSpeed;
+      }
+    } else {
+      vel = vel * 0.99;
+      isThrusting = false;
+
+      // Gravity after take-off
+      if (worldY != 0) {
+        worldY -= 3;
+        if (playerRotation < 0.5 && playerRotation > -0.5) {
+          vel += 0.08;
+        }
+      }
+    }
+
+    if (keyIsDown(DOWN_ARROW)) {
+      vel += 0.5;
+      if (vel > 0) {
+        vel = 0;
+      }
+    }
+  }
+
+  // Reset
+  if (keyIsDown(BACKSPACE)) {
+    setup();
+  }
+
+  // Testing
+  if (keyIsDown(ENTER)) {
+    goalX = worldX;
+    goalY = worldY;
+  }
+}
+
+function collisionUpdate() {
+  playerY =
+    canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 120;
+  playerX = canvasWidth / 2 + Math.sin(((playerRotation / PI) % 2) * PI) * 120;
+
+  playerHeight =
+    canvasHeight / 2 + 35 + Math.cos(((playerRotation / PI) % 2) * PI) * 65;
+  playerWidth =
+    canvasWidth / 2 - Math.sin(((playerRotation / PI) % 2) * PI) * 65;
+
+  // Landing
+  if (
+    goalY + worldY - goalRadius < 0 &&
+    goalY + worldY - goalRadius > -15 &&
+    goalX + worldX - canvasWidth / 2 < 60 &&
+    goalX + worldX - canvasWidth / 2 > -60 &&
+    playerRotation < 0.3 &&
+    playerRotation > -0.3 &&
+    vel > -0.6 &&
+    vel < 0.6
+  ) {
+    vel = 0;
+    gameWon = true;
   }
 }
