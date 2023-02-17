@@ -1,13 +1,19 @@
+// Todo:
+// - declare all temp variables in the functions and loops
+// - optimize asteroid collision (seperate isColliding function for if statements)
+// - Html with fading startscreen and scorescreen - store times in local storage
+
 // Canvas
 const canvasWidth = 800;
 const canvasHeight = 800;
 
 // Player
-let playerX;
-let playerY;
-let playerHeight;
-let playerWidth;
+let playerX1;
+let playerY1;
+let playerY2;
+let playerX2;
 let playerRotation;
+let radarRotation;
 let vel;
 const maxSpeed = -20;
 let isAlive;
@@ -22,17 +28,19 @@ let goalX;
 let goalY;
 const goalRadius = 1000;
 let asteroids = [];
+let mountains = [];
 const asteroidRadius = 80;
 const asteroidRangeX = 12000;
 const asteroidRangeY = -10000;
 const asteroidAmount = 839;
+const mountainAmount = 80;
 let randomSize;
 let bg;
 let gameWon;
 
-let i;
 let tempX;
 let tempY;
+let distance;
 
 function preload() {
   bg = loadImage("assets/Space.jpg");
@@ -49,16 +57,25 @@ function setup() {
   isThrusting = false;
   explosionRadius = 1;
   asteroids = [];
+  mountains = [];
   gameWon = false;
 
   // Level generation
-  for (i = 0; i < asteroidAmount; i++) {
+  for (let i = 0; i < asteroidAmount; i++) {
     tempX = (Math.random() - 0.5) * asteroidRangeX;
     tempY = Math.random() * (asteroidRangeY + 300) - 300;
     randomSize = (Math.random() + 0.5) * asteroidRadius;
     asteroids.push(tempX);
     asteroids.push(tempY);
     asteroids.push(randomSize);
+  }
+  for (let j = 0; j < mountainAmount; j++) {
+    tempX = (Math.random() - 0.5) * asteroidRangeX;
+    tempY = 495 + Math.random() * 200;
+    randomSize = (Math.random() + 0.8) * 200;
+    mountains.push(tempX);
+    mountains.push(tempY);
+    mountains.push(randomSize);
   }
   goalX = (Math.random() - 0.5) * asteroidRangeX;
   goalY = Math.random() * (asteroidRangeY + 7000) - 7000;
@@ -70,9 +87,21 @@ function draw() {
 
   background(7, 9, 10);
   image(bg, 0, asteroidRangeY + worldY + 510);
+
+  for (let i = 0; i < mountainAmount; i += 3) {
+    push();
+    createMountain(mountains[i], mountains[i + 1], mountains[i + 2]);
+    pop();
+  }
   floor();
-  for (i = 0; i < asteroidAmount; i += 3)
-    createAsteroid(asteroids[i], asteroids[i + 1], asteroids[i + 2]);
+
+  for (let i = 0; i < asteroidAmount; i += 3) {
+    push();
+    translate(asteroids[i] + worldX, asteroids[i + 1] + worldY);
+    rotate(asteroids[i + 2]);
+    createAsteroid(asteroids[i + 2]);
+    pop();
+  }
   moon();
 
   // Player
@@ -160,7 +189,7 @@ function ship(playerRotation) {
   bezierVertex(15, -30, 0, -40, -15, -30);
   endShape();
 
-  if (isThrusting) {
+  if (isThrusting && gameWon == false) {
     fill(255, 80, 80);
     beginShape();
     vertex(0, 70);
@@ -186,8 +215,8 @@ function radar(goalX, goalY) {
   tempX = goalX - (canvasWidth / 2 - worldX);
   tempY = goalY - (canvasHeight / 2 - worldY + goalRadius / 2);
 
-  let distance = Math.floor(Math.sqrt(tempX * tempX + tempY * tempY));
-  let radarRotation = -Math.acos(tempX / distance) + HALF_PI;
+  distance = Math.floor(Math.sqrt(tempX * tempX + tempY * tempY));
+  radarRotation = -Math.acos(tempX / distance) + HALF_PI;
 
   if (goalY > -worldY + goalRadius) {
     radarRotation = Math.acos(tempX / distance) + HALF_PI;
@@ -293,18 +322,17 @@ function gameOverText() {
   pop();
 }
 
-function createAsteroid(x, y, size) {
+function createAsteroid(size) {
   push();
-  translate(x, y);
   stroke(120, 120, 120);
   strokeWeight(size / 14);
   fill(180, 180, 180);
-  ellipse(worldX, worldY, size);
+  ellipse(0, 0, size);
   noStroke();
   fill(160, 160, 160);
-  ellipse(worldX - size / 6, worldY - size / 6, size / 3);
-  ellipse(worldX, worldY + size / 4, size / 4);
-  ellipse(worldX + size / 4, worldY - size / 8, size / 5);
+  ellipse(-size / 6, -size / 6, size / 3);
+  ellipse(0, size / 4, size / 4);
+  ellipse(size / 4, -size / 8, size / 5);
   pop();
 }
 
@@ -337,71 +365,99 @@ function explosion() {
 
 function moon() {
   push();
+  translate(goalX + worldX, goalY + worldY);
   noStroke();
   fill(255, 255, 255, 2);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius * 4);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius * 3.5);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius * 3);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius * 2.5);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius * 2);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius * 1.5);
+  ellipse(0, 0, goalRadius * 4);
+  ellipse(0, 0, goalRadius * 3.5);
+  ellipse(0, 0, goalRadius * 3);
+  ellipse(0, 0, goalRadius * 2.5);
+  ellipse(0, 0, goalRadius * 2);
+  ellipse(0, 0, goalRadius * 1.5);
   fill(255, 255, 255);
   stroke(189, 195, 209);
   strokeWeight(10);
-  ellipse(goalX + worldX, goalY + worldY, goalRadius);
+  ellipse(0, 0, goalRadius);
   noStroke();
   fill(189, 195, 209);
   beginShape();
-  vertex(goalX + worldX, goalY + worldY - goalRadius / 2);
+  vertex(0, 0 - goalRadius / 2);
   bezierVertex(
-    goalX + worldX,
-    goalY + worldY - goalRadius / 2,
-    goalX + goalRadius / 2 + worldX,
-    goalY + goalRadius / 6 + worldY,
-    goalX + worldX,
-    goalY + worldY + goalRadius / 2
+    0,
+    -goalRadius / 2,
+    goalRadius / 2 + (goalX + worldX) / 3,
+    0,
+    0,
+    0 + goalRadius / 2
   );
   bezierVertex(
-    goalX + worldX,
-    goalY + worldY + goalRadius / 2,
-    goalX + goalRadius / 2 + worldX,
-    goalY + goalRadius / 2 + worldY,
-    goalX + worldX + goalRadius / 2,
-    goalY + worldY
+    0,
+    0 + goalRadius / 2,
+    goalRadius / 2,
+    goalRadius / 2,
+    goalRadius / 2,
+    0
   );
   bezierVertex(
-    goalX + worldX + goalRadius / 2,
-    goalY + worldY,
-    goalX + goalRadius / 2 + worldX,
-    goalY - goalRadius / 2 + worldY,
-    goalX + worldX,
-    goalY + worldY - goalRadius / 2
+    goalRadius / 2,
+    0,
+    goalRadius / 2,
+    -goalRadius / 2,
+    0,
+    -goalRadius / 2
   );
   endShape();
   stroke(255, 255, 255);
-  ellipse(goalX + worldX - 320, goalY + worldY - 150, goalRadius / 6);
-  ellipse(goalX + worldX + 250, goalY + worldY + 200, goalRadius / 9);
-  ellipse(goalX + worldX + 200, goalY + worldY - 200, goalRadius / 8);
-  ellipse(goalX + worldX - 150, goalY + worldY + 180, goalRadius / 4);
+  ellipse(-320, -150, goalRadius / 6);
+  ellipse(250, 200, goalRadius / 9);
+  ellipse(200, -200, goalRadius / 8);
+  ellipse(-150, 180, goalRadius / 4);
 
   if (gameWon == false) {
-    fill(237, 236, 197, 150);
+    fill(255, 180, 140, 150);
     noStroke();
-    ellipse(goalX + worldX, goalY + worldY - goalRadius / 2 + 5, 150, 20);
-    stroke(237, 236, 197);
+    ellipse(0, -goalRadius / 2 + 5, 150, 20);
+    stroke(255, 180, 140);
     strokeWeight(6);
-    line(
-      goalX + worldX,
-      goalY + worldY - goalRadius / 2 - 30,
-      goalX + worldX - 20,
-      goalY + worldY - goalRadius / 2 - 50
-    );
-    line(
-      goalX + worldX,
-      goalY + worldY - goalRadius / 2 - 30,
-      goalX + worldX + 20,
-      goalY + worldY - goalRadius / 2 - 50
-    );
+    line(0, -goalRadius / 2 - 30, -20, -goalRadius / 2 - 50);
+    line(0, -goalRadius / 2 - 30, 20, -goalRadius / 2 - 50);
+  } else {
+    stroke(55, 55, 55);
+    strokeWeight(5);
+    line(-90, -goalRadius / 2 + 30, -120, -goalRadius / 2 - 90);
+    strokeWeight(0);
+    fill(75, 176, 255);
+    beginShape();
+    vertex(-122, -goalRadius / 2 - 90);
+    vertex(-172, -goalRadius / 2 - 80);
+    vertex(-162, -goalRadius / 2 - 40);
+    vertex(-112, -goalRadius / 2 - 50);
+    endShape();
+    noFill();
+    stroke(232, 235, 75);
+    strokeWeight(10);
+    line(-140, -goalRadius / 2 - 82, -132, -goalRadius / 2 - 50);
+    line(-162, -goalRadius / 2 - 60, -120, -goalRadius / 2 - 68);
+    stroke(55, 55, 55);
+    strokeWeight(4);
+    beginShape();
+    vertex(-122, -goalRadius / 2 - 90);
+    vertex(-172, -goalRadius / 2 - 80);
+    vertex(-162, -goalRadius / 2 - 40);
+    vertex(-112, -goalRadius / 2 - 50);
+    vertex(-122, -goalRadius / 2 - 90);
+    endShape();
+
+    translate(0, -canvasHeight);
+    textFont("LEMON MILK");
+    textAlign(CENTER, CENTER);
+    stroke(55, 55, 55);
+    strokeWeight(8);
+    fill(255, 255, 255);
+    textSize(36);
+    text("You win!", 0, 0);
+    textSize(18);
+    text("Press backspace to restart", 0, 40);
   }
   pop();
 }
@@ -437,7 +493,7 @@ function keyboardControlls() {
       }
     }
 
-    if (keyIsDown(DOWN_ARROW)) {
+    if (keyIsDown(DOWN_ARROW) && keyIsDown(UP_ARROW) == false) {
       vel += 0.5;
       if (vel > 0) {
         vel = 0;
@@ -452,20 +508,70 @@ function keyboardControlls() {
 
   // Testing
   if (keyIsDown(ENTER)) {
-    goalX = worldX;
-    goalY = worldY;
+    goalX = worldX - 500;
+    goalY = worldY - 300;
   }
 }
 
 function collisionUpdate() {
-  playerY =
-    canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 120;
-  playerX = canvasWidth / 2 + Math.sin(((playerRotation / PI) % 2) * PI) * 120;
+  playerY1 =
+    canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 75;
+  playerX1 = canvasWidth / 2 + Math.sin(((playerRotation / PI) % 2) * PI) * 75;
 
-  playerHeight =
-    canvasHeight / 2 + 35 + Math.cos(((playerRotation / PI) % 2) * PI) * 65;
-  playerWidth =
-    canvasWidth / 2 - Math.sin(((playerRotation / PI) % 2) * PI) * 65;
+  playerY2 =
+    canvasHeight / 2 + 35 + Math.cos(((playerRotation / PI) % 2) * PI) * 5;
+  playerX2 = canvasWidth / 2 - Math.sin(((playerRotation / PI) % 2) * PI) * 5;
+
+  // Asteroid collision
+  for (let i = 0; i < asteroidAmount; i += 3) {
+    tempX = worldX + asteroids[i] - playerX1;
+    tempY = worldY + asteroids[i + 1] - playerY1;
+    distance = Math.sqrt(tempX * tempX + tempY * tempY);
+    if (
+      distance + asteroids[i + 2] / 2 < 45 ||
+      distance - asteroids[i + 2] / 2 < 45
+    ) {
+      isAlive = false;
+      vel = 0;
+      return;
+    }
+    tempX = worldX + asteroids[i] - playerX2;
+    tempY = worldY + asteroids[i + 1] - playerY2;
+    distance = Math.sqrt(tempX * tempX + tempY * tempY);
+    if (
+      distance + asteroids[i + 2] / 2 < 55 ||
+      distance - asteroids[i + 2] / 2 < 55
+    ) {
+      isAlive = false;
+      vel = 0;
+      return;
+    }
+  }
+
+  // Moon collision
+  tempX = worldX + goalX - playerX1;
+  tempY = worldY + goalY - playerY1;
+  distance = Math.sqrt(tempX * tempX + tempY * tempY);
+  if (distance + goalRadius / 2 < 45 || distance - goalRadius / 2 < 45) {
+    isAlive = false;
+    vel = 0;
+    return;
+  }
+  tempX = worldX + goalX - playerX2;
+  tempY = worldY + goalY - playerY2;
+  distance = Math.sqrt(tempX * tempX + tempY * tempY);
+  if (distance + goalRadius / 2 < 55 || distance - goalRadius / 2 < 55) {
+    isAlive = false;
+    vel = 0;
+    return;
+  }
+
+  // Floor collision
+  if (worldY < 0) {
+    isAlive = false;
+    vel = 0;
+    return;
+  }
 
   // Landing
   if (
@@ -478,7 +584,39 @@ function collisionUpdate() {
     vel > -0.6 &&
     vel < 0.6
   ) {
-    vel = 0;
     gameWon = true;
+    vel = 0;
+    return;
   }
+}
+
+function createMountain(x, y, size) {
+  push();
+  translate(x + worldX, y + worldY);
+  fill(65, 74, 77);
+  stroke(26, 38, 46);
+  strokeWeight(size / 20);
+  beginShape();
+  vertex(0, 0);
+  vertex(size, -4 * size);
+  vertex(size * 1.4, -2.5 * size);
+  vertex(size * 1.6, -3 * size);
+  vertex(size * 2.3, 0);
+  endShape();
+  fill(255, 255, 255);
+  beginShape();
+  vertex(size / 1.6, -2.5 * size);
+  vertex(size, -2.8 * size);
+  vertex(size * 1.33, -2.6 * size);
+  vertex(size, -4 * size);
+  vertex(size / 1.6, -2.5 * size);
+  endShape();
+  fill(26, 38, 46, 100);
+  noStroke();
+  beginShape();
+  vertex(size, -4 * size);
+  vertex(size * 1.4, 0);
+  vertex(0, 0);
+  endShape();
+  pop();
 }
