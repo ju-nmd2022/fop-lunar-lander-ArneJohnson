@@ -1,19 +1,13 @@
 // Todo:
-// - declare all temp variables in the functions and loops
-// - optimize asteroid collision (seperate isColliding function for if statements)
 // - Html with fading startscreen and scorescreen - store times in local storage
+// - speed lines while thrusting
 
 // Canvas
 const canvasWidth = 800;
 const canvasHeight = 800;
 
 // Player
-let playerX1;
-let playerY1;
-let playerY2;
-let playerX2;
 let playerRotation;
-let radarRotation;
 let vel;
 const maxSpeed = -20;
 let isAlive;
@@ -34,19 +28,18 @@ const asteroidRangeX = 12000;
 const asteroidRangeY = -10000;
 const asteroidAmount = 839;
 const mountainAmount = 80;
-let randomSize;
 let bg;
 let gameWon;
-
-let tempX;
-let tempY;
-let distance;
 
 function preload() {
   bg = loadImage("assets/Space.jpg");
 }
 
 function setup() {
+  let tempX;
+  let tempY;
+  let randomSize;
+
   createCanvas(canvasWidth, canvasHeight);
   playerRotation = 0;
   vel = 0;
@@ -121,10 +114,21 @@ function update() {
 
   collisionUpdate();
 
+  for (let i = 0; i < asteroidAmount; i += 3) {
+    if (asteroids[i] < -asteroidRangeX / 2) {
+      asteroids[i] = asteroidRangeX / 2;
+    } else {
+      asteroids[i] -= asteroids[i + 2] / 35;
+    }
+  }
+
   worldY -= Math.cos(playerRotation) * vel;
   worldX += Math.sin(playerRotation) * vel;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                              Player functions                              */
+/* -------------------------------------------------------------------------- */
 function ship(playerRotation) {
   push();
   translate(canvasWidth / 2, canvasHeight / 2 + 35);
@@ -210,10 +214,11 @@ function ship(playerRotation) {
   }
   pop();
 }
-
 function radar(goalX, goalY) {
-  tempX = goalX - (canvasWidth / 2 - worldX);
-  tempY = goalY - (canvasHeight / 2 - worldY + goalRadius / 2);
+  let radarRotation;
+  let tempX = goalX - (canvasWidth / 2 - worldX);
+  let tempY = goalY - (canvasHeight / 2 - worldY + goalRadius / 2);
+  let distance;
 
   distance = Math.floor(Math.sqrt(tempX * tempX + tempY * tempY));
   radarRotation = -Math.acos(tempX / distance) + HALF_PI;
@@ -263,7 +268,36 @@ function radar(goalX, goalY) {
   text(distance + "m", 50, 30);
   pop();
 }
+function explosion() {
+  push();
+  noStroke();
+  translate(canvasWidth / 2, canvasHeight / 2 + 75);
 
+  fill(255, 100, 100);
+  rect(-explosionRadius / 2, -explosionRadius / 2, explosionRadius);
+  rotate(HALF_PI / 2);
+  rect(-explosionRadius / 2, -explosionRadius / 2, explosionRadius);
+
+  fill(255, 150, 100);
+  rect(-explosionRadius / 3, -explosionRadius / 3, explosionRadius / 1.5);
+  rotate(HALF_PI / 2);
+  rect(-explosionRadius / 3, -explosionRadius / 3, explosionRadius / 1.5);
+
+  fill(255, 200, 100);
+  rect(-explosionRadius / 6, -explosionRadius / 6, explosionRadius / 3);
+  rotate(HALF_PI / 2);
+  rect(-explosionRadius / 6, -explosionRadius / 6, explosionRadius / 3);
+  pop();
+  if (explosionRadius > 120) {
+    isPlayerExplode = true;
+  } else {
+    explosionRadius += 15;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              World functions                               */
+/* -------------------------------------------------------------------------- */
 function floor() {
   push();
   stroke(95, 148, 89);
@@ -306,7 +340,6 @@ function floor() {
   text("Press backspace to restart", 50 + worldX, 780 + worldY);
   pop();
 }
-
 function gameOverText() {
   push();
   translate(canvasWidth / 2, canvasHeight / 2);
@@ -321,7 +354,6 @@ function gameOverText() {
   text("Press backspace to restart", 0, 40);
   pop();
 }
-
 function createAsteroid(size) {
   push();
   stroke(120, 120, 120);
@@ -333,36 +365,10 @@ function createAsteroid(size) {
   ellipse(-size / 6, -size / 6, size / 3);
   ellipse(0, size / 4, size / 4);
   ellipse(size / 4, -size / 8, size / 5);
+  fill(180, 180, 180, 50);
+  ellipse(0, 0, size * 1.2);
   pop();
 }
-
-function explosion() {
-  push();
-  noStroke();
-  translate(canvasWidth / 2, canvasHeight / 2 + 75);
-
-  fill(255, 100, 100);
-  rect(-explosionRadius / 2, -explosionRadius / 2, explosionRadius);
-  rotate(HALF_PI / 2);
-  rect(-explosionRadius / 2, -explosionRadius / 2, explosionRadius);
-
-  fill(255, 150, 100);
-  rect(-explosionRadius / 3, -explosionRadius / 3, explosionRadius / 1.5);
-  rotate(HALF_PI / 2);
-  rect(-explosionRadius / 3, -explosionRadius / 3, explosionRadius / 1.5);
-
-  fill(255, 200, 100);
-  rect(-explosionRadius / 6, -explosionRadius / 6, explosionRadius / 3);
-  rotate(HALF_PI / 2);
-  rect(-explosionRadius / 6, -explosionRadius / 6, explosionRadius / 3);
-  pop();
-  if (explosionRadius > 120) {
-    isPlayerExplode = true;
-  } else {
-    explosionRadius += 15;
-  }
-}
-
 function moon() {
   push();
   translate(goalX + worldX, goalY + worldY);
@@ -461,7 +467,40 @@ function moon() {
   }
   pop();
 }
+function createMountain(x, y, size) {
+  push();
+  translate(x + worldX, y + worldY);
+  fill(65, 74, 77);
+  stroke(26, 38, 46);
+  strokeWeight(size / 20);
+  beginShape();
+  vertex(0, 0);
+  vertex(size, -4 * size);
+  vertex(size * 1.4, -2.5 * size);
+  vertex(size * 1.6, -3 * size);
+  vertex(size * 2.3, 0);
+  endShape();
+  fill(255, 255, 255);
+  beginShape();
+  vertex(size / 1.6, -2.5 * size);
+  vertex(size, -2.8 * size);
+  vertex(size * 1.33, -2.6 * size);
+  vertex(size, -4 * size);
+  vertex(size / 1.6, -2.5 * size);
+  endShape();
+  fill(26, 38, 46, 100);
+  noStroke();
+  beginShape();
+  vertex(size, -4 * size);
+  vertex(size * 1.4, 0);
+  vertex(0, 0);
+  endShape();
+  pop();
+}
 
+/* -------------------------------------------------------------------------- */
+/*                                Functionality                               */
+/* -------------------------------------------------------------------------- */
 function keyboardControlls() {
   if (isAlive && gameWon == false) {
     // Rotation
@@ -512,15 +551,20 @@ function keyboardControlls() {
     goalY = worldY - 300;
   }
 }
-
 function collisionUpdate() {
-  playerY1 =
-    canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 75;
-  playerX1 = canvasWidth / 2 + Math.sin(((playerRotation / PI) % 2) * PI) * 75;
+  let tempX;
+  let tempY;
+  let distance;
 
-  playerY2 =
+  let playerY1 =
+    canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 75;
+  let playerX1 =
+    canvasWidth / 2 + Math.sin(((playerRotation / PI) % 2) * PI) * 75;
+
+  let playerY2 =
     canvasHeight / 2 + 35 + Math.cos(((playerRotation / PI) % 2) * PI) * 5;
-  playerX2 = canvasWidth / 2 - Math.sin(((playerRotation / PI) % 2) * PI) * 5;
+  let playerX2 =
+    canvasWidth / 2 - Math.sin(((playerRotation / PI) % 2) * PI) * 5;
 
   // Asteroid collision
   for (let i = 0; i < asteroidAmount; i += 3) {
@@ -588,35 +632,4 @@ function collisionUpdate() {
     vel = 0;
     return;
   }
-}
-
-function createMountain(x, y, size) {
-  push();
-  translate(x + worldX, y + worldY);
-  fill(65, 74, 77);
-  stroke(26, 38, 46);
-  strokeWeight(size / 20);
-  beginShape();
-  vertex(0, 0);
-  vertex(size, -4 * size);
-  vertex(size * 1.4, -2.5 * size);
-  vertex(size * 1.6, -3 * size);
-  vertex(size * 2.3, 0);
-  endShape();
-  fill(255, 255, 255);
-  beginShape();
-  vertex(size / 1.6, -2.5 * size);
-  vertex(size, -2.8 * size);
-  vertex(size * 1.33, -2.6 * size);
-  vertex(size, -4 * size);
-  vertex(size / 1.6, -2.5 * size);
-  endShape();
-  fill(26, 38, 46, 100);
-  noStroke();
-  beginShape();
-  vertex(size, -4 * size);
-  vertex(size * 1.4, 0);
-  vertex(0, 0);
-  endShape();
-  pop();
 }
