@@ -1,12 +1,8 @@
-// Todo:
-// - Html with fading startscreen and scorescreen - store times in local storage
-// - speed lines while thrusting
-
-// Canvas
+// Canvas variables
 const canvasWidth = 800;
 const canvasHeight = 800;
 
-// Player
+// Player variables
 let playerRotation;
 let vel;
 const maxSpeed = -20;
@@ -15,7 +11,7 @@ let isPlayerExplode;
 let isThrusting;
 let explosionRadius;
 
-// Level
+// Level variables
 let worldX;
 let worldY;
 let goalX;
@@ -24,15 +20,34 @@ const goalRadius = 1000;
 let asteroids = [];
 let mountains = [];
 const asteroidRadius = 80;
-const asteroidRangeX = 12000;
-const asteroidRangeY = -10000;
-const asteroidAmount = 839;
-const mountainAmount = 80;
+const asteroidRangeX = 14000;
+const asteroidRangeY = -12000;
+const asteroidAmount = 998;
+const mountainAmount = 100;
 let bg;
 let gameWon;
+let timer;
+let gameTimer;
+
+// Start and end screen variables
+let gameStarted;
+let gameEnded;
+let startButton;
 
 function preload() {
+  createCanvas(canvasWidth, canvasHeight);
   bg = loadImage("assets/Space.jpg");
+
+  gameStarted = false;
+  gameEnded = false;
+
+  startButton = createButton("Start game");
+  startButton.position(canvasWidth / 2, canvasHeight / 2);
+  startButton.mousePressed(startGame);
+  startButton.style("padding", "10px");
+  startButton.style("font-family", "LEMON MILK");
+
+  setup();
 }
 
 function setup() {
@@ -40,7 +55,6 @@ function setup() {
   let tempY;
   let randomSize;
 
-  createCanvas(canvasWidth, canvasHeight);
   playerRotation = 0;
   vel = 0;
   worldX = 0;
@@ -52,6 +66,8 @@ function setup() {
   asteroids = [];
   mountains = [];
   gameWon = false;
+  gameEnded = false;
+  gameTimer = 0;
 
   // Level generation
   for (let i = 0; i < asteroidAmount; i++) {
@@ -70,8 +86,11 @@ function setup() {
     mountains.push(tempY);
     mountains.push(randomSize);
   }
-  goalX = (Math.random() - 0.5) * asteroidRangeX;
-  goalY = Math.random() * (asteroidRangeY + 7000) - 7000;
+  goalX = (Math.random() - 0.5) * asteroidRangeX * 0.9;
+  goalY = Math.random() * (asteroidRangeY * 0.9 + 7000) - 7000;
+
+  clearInterval(timer);
+  timer = setInterval(timerCount, 10);
 }
 
 function draw() {
@@ -79,14 +98,13 @@ function draw() {
   update();
 
   background(7, 9, 10);
-  image(bg, 0, asteroidRangeY + worldY + 510);
+  image(bg, 0, asteroidRangeY + worldY + 2500);
 
   for (let i = 0; i < mountainAmount; i += 3) {
     push();
     createMountain(mountains[i], mountains[i + 1], mountains[i + 2]);
     pop();
   }
-  floor();
 
   for (let i = 0; i < asteroidAmount; i += 3) {
     push();
@@ -95,30 +113,46 @@ function draw() {
     createAsteroid(asteroids[i + 2]);
     pop();
   }
+
+  floor();
   moon();
 
   // Player
   if (isAlive) {
     ship(playerRotation);
-    if (gameWon == false) radar(goalX, goalY);
-  } else {
-    if (isPlayerExplode == false) {
-      explosion();
+
+    if (gameWon == false) {
+      radar(goalX, goalY);
+      drawTimer();
+    } else {
+      goalText();
     }
+  } else {
+    if (isPlayerExplode == false) explosion();
+
     gameOverText();
   }
+
+  // Start and end screens
+  if (gameStarted == false) startScreen();
+  if (gameEnded) endScreen();
 }
 
 function update() {
   keyboardControlls();
 
-  collisionUpdate();
+  if (gameWon == false) collisionUpdate();
 
   for (let i = 0; i < asteroidAmount; i += 3) {
     if (asteroids[i] < -asteroidRangeX / 2) {
       asteroids[i] = asteroidRangeX / 2;
     } else {
-      asteroids[i] -= asteroids[i + 2] / 35;
+      asteroids[i] -= asteroids[i + 2] / 30;
+    }
+    if (asteroids[i + 1] > 0) {
+      asteroids[i + 1] = asteroidRangeY;
+    } else {
+      asteroids[i + 1] += asteroids[i + 2] / 40;
     }
   }
 
@@ -129,6 +163,7 @@ function update() {
 /* -------------------------------------------------------------------------- */
 /*                              Player functions                              */
 /* -------------------------------------------------------------------------- */
+
 function ship(playerRotation) {
   push();
   translate(canvasWidth / 2, canvasHeight / 2 + 35);
@@ -214,6 +249,7 @@ function ship(playerRotation) {
   }
   pop();
 }
+
 function radar(goalX, goalY) {
   let radarRotation;
   let tempX = goalX - (canvasWidth / 2 - worldX);
@@ -268,6 +304,7 @@ function radar(goalX, goalY) {
   text(distance + "m", 50, 30);
   pop();
 }
+
 function explosion() {
   push();
   noStroke();
@@ -295,9 +332,45 @@ function explosion() {
   }
 }
 
+function drawTimer() {
+  push();
+  translate(canvasWidth - 100, 50);
+  textFont("LEMON MILK");
+  textAlign(LEFT, CENTER);
+  stroke(55, 55, 55);
+  strokeWeight(6);
+  fill(255, 255, 255);
+  textSize(24);
+  text(gameTimer / 100, 0, 0);
+  pop();
+}
+
 /* -------------------------------------------------------------------------- */
-/*                              World functions                               */
+/*                             Start/End screen                               */
 /* -------------------------------------------------------------------------- */
+
+function startScreen() {
+  push();
+  background(255, 0, 0);
+  pop();
+}
+
+function endScreen() {
+  push();
+  background(0, 255, 0);
+  pop();
+}
+
+function startGame() {
+  startButton.remove();
+  gameStarted = true;
+  setup();
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Level functions                               */
+/* -------------------------------------------------------------------------- */
+
 function floor() {
   push();
   stroke(95, 148, 89);
@@ -340,6 +413,7 @@ function floor() {
   text("Press backspace to restart", 50 + worldX, 780 + worldY);
   pop();
 }
+
 function gameOverText() {
   push();
   translate(canvasWidth / 2, canvasHeight / 2);
@@ -354,6 +428,7 @@ function gameOverText() {
   text("Press backspace to restart", 0, 40);
   pop();
 }
+
 function createAsteroid(size) {
   push();
   stroke(120, 120, 120);
@@ -369,6 +444,8 @@ function createAsteroid(size) {
   ellipse(0, 0, size * 1.2);
   pop();
 }
+
+// Moon and goal text
 function moon() {
   push();
   translate(goalX + worldX, goalY + worldY);
@@ -385,7 +462,7 @@ function moon() {
   strokeWeight(10);
   ellipse(0, 0, goalRadius);
   noStroke();
-  fill(189, 195, 209);
+  fill(189, 195, 209, 128);
   beginShape();
   vertex(0, 0 - goalRadius / 2);
   bezierVertex(
@@ -419,6 +496,10 @@ function moon() {
   ellipse(200, -200, goalRadius / 8);
   ellipse(-150, 180, goalRadius / 4);
 
+  noStroke();
+  fill(180, 180, 180, 50);
+  ellipse(0, 0, goalRadius * 1.05);
+
   if (gameWon == false) {
     fill(255, 180, 140, 150);
     noStroke();
@@ -427,46 +508,10 @@ function moon() {
     strokeWeight(6);
     line(0, -goalRadius / 2 - 30, -20, -goalRadius / 2 - 50);
     line(0, -goalRadius / 2 - 30, 20, -goalRadius / 2 - 50);
-  } else {
-    stroke(55, 55, 55);
-    strokeWeight(5);
-    line(-90, -goalRadius / 2 + 30, -120, -goalRadius / 2 - 90);
-    strokeWeight(0);
-    fill(75, 176, 255);
-    beginShape();
-    vertex(-122, -goalRadius / 2 - 90);
-    vertex(-172, -goalRadius / 2 - 80);
-    vertex(-162, -goalRadius / 2 - 40);
-    vertex(-112, -goalRadius / 2 - 50);
-    endShape();
-    noFill();
-    stroke(232, 235, 75);
-    strokeWeight(10);
-    line(-140, -goalRadius / 2 - 82, -132, -goalRadius / 2 - 50);
-    line(-162, -goalRadius / 2 - 60, -120, -goalRadius / 2 - 68);
-    stroke(55, 55, 55);
-    strokeWeight(4);
-    beginShape();
-    vertex(-122, -goalRadius / 2 - 90);
-    vertex(-172, -goalRadius / 2 - 80);
-    vertex(-162, -goalRadius / 2 - 40);
-    vertex(-112, -goalRadius / 2 - 50);
-    vertex(-122, -goalRadius / 2 - 90);
-    endShape();
-
-    translate(0, -canvasHeight);
-    textFont("LEMON MILK");
-    textAlign(CENTER, CENTER);
-    stroke(55, 55, 55);
-    strokeWeight(8);
-    fill(255, 255, 255);
-    textSize(36);
-    text("You win!", 0, 0);
-    textSize(18);
-    text("Press backspace to restart", 0, 40);
   }
   pop();
 }
+
 function createMountain(x, y, size) {
   push();
   translate(x + worldX, y + worldY);
@@ -495,6 +540,98 @@ function createMountain(x, y, size) {
   vertex(size * 1.4, 0);
   vertex(0, 0);
   endShape();
+  pop();
+
+  tree(x - 100 - size / 2);
+  tree(x);
+  tree(x + size);
+  tree(x + 500 + size / 2);
+}
+
+function goalText() {
+  push();
+  translate(goalX + worldX, goalY + worldY);
+  stroke(55, 55, 55);
+  strokeWeight(5);
+  line(-90, -goalRadius / 2 + 30, -120, -goalRadius / 2 - 90);
+  strokeWeight(0);
+  fill(75, 176, 255);
+  beginShape();
+  vertex(-122, -goalRadius / 2 - 90);
+  vertex(-172, -goalRadius / 2 - 80);
+  vertex(-162, -goalRadius / 2 - 40);
+  vertex(-112, -goalRadius / 2 - 50);
+  endShape();
+  noFill();
+  stroke(232, 235, 75);
+  strokeWeight(10);
+  line(-140, -goalRadius / 2 - 82, -132, -goalRadius / 2 - 50);
+  line(-162, -goalRadius / 2 - 60, -120, -goalRadius / 2 - 68);
+  stroke(55, 55, 55);
+  strokeWeight(4);
+  beginShape();
+  vertex(-122, -goalRadius / 2 - 90);
+  vertex(-172, -goalRadius / 2 - 80);
+  vertex(-162, -goalRadius / 2 - 40);
+  vertex(-112, -goalRadius / 2 - 50);
+  vertex(-122, -goalRadius / 2 - 90);
+  endShape();
+
+  translate(0, -canvasHeight - 30);
+  textFont("LEMON MILK");
+  textAlign(CENTER, CENTER);
+  stroke(55, 55, 55);
+  strokeWeight(8);
+  fill(255, 255, 255);
+  textSize(36);
+  text("Congratulations!", 0, 0);
+  textSize(18);
+  text(
+    "It took you " + gameTimer / 100 + " seconds to land on the moon",
+    0,
+    40
+  );
+  textSize(16);
+  fill(255, 180, 140);
+  strokeWeight(6);
+  text("Press backspace to restart", 0, 90);
+  text("Or press Enter submit your score", 0, 120);
+  pop();
+}
+
+function tree(x) {
+  push();
+  translate(x + worldX, 494 + worldY);
+
+  noStroke();
+  fill(88, 128, 59);
+  ellipse(-20, -70, 50, 40);
+  ellipse(20, -60, 55, 45);
+  ellipse(10, -90, 60, 50);
+
+  noFill();
+  stroke(135, 93, 55);
+  strokeWeight(20);
+  line(0, 0, 0, -10);
+  strokeWeight(12);
+  line(0, -10, 0, -50);
+  strokeWeight(8);
+  line(0, -50, -20, -70);
+  line(0, -50, 10, -90);
+  line(0, -50, 20, -60);
+
+  noStroke();
+  fill(121, 196, 88, 80);
+  ellipse(-20, -70, 40, 30);
+  fill(172, 230, 129, 80);
+  ellipse(20, -60, 45, 35);
+  fill(109, 161, 69, 80);
+  ellipse(10, -90, 50, 40);
+
+  fill(88, 128, 59);
+  ellipse(-100, 0, 80, 50);
+  fill(112, 156, 81);
+  ellipse(-70, 0, 50, 30);
   pop();
 }
 
@@ -545,10 +682,9 @@ function keyboardControlls() {
     setup();
   }
 
-  // Testing
-  if (keyIsDown(ENTER)) {
-    goalX = worldX - 500;
-    goalY = worldY - 300;
+  // Back to start screen
+  if (keyIsDown(ENTER) && gameWon == true) {
+    gameEnded = true;
   }
 }
 function collisionUpdate() {
@@ -631,5 +767,12 @@ function collisionUpdate() {
     gameWon = true;
     vel = 0;
     return;
+  }
+}
+
+function timerCount() {
+  gameTimer++;
+  if (gameWon == true || isAlive == false) {
+    clearInterval(timer);
   }
 }
