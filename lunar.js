@@ -22,30 +22,48 @@ let mountains = [];
 const asteroidRadius = 80;
 const asteroidRangeX = 14000;
 const asteroidRangeY = -12000;
-const asteroidAmount = 998;
+const asteroidAmount = 1199;
 const mountainAmount = 100;
 let bg;
 let gameWon;
 let timer;
 let gameTimer;
+let highscores = [];
 
 // Start and end screen variables
 let gameStarted;
 let gameEnded;
-let startButton;
+let startBtn;
+let coverImg;
+let creditsImg;
+
+// Stars
+const numStars = 150;
+let stars = [];
 
 function preload() {
   createCanvas(canvasWidth, canvasHeight);
+
   bg = loadImage("assets/Space.jpg");
+  coverImg = loadImage("assets/cover.jpg");
+  creditsImg = loadImage("assets/credits.jpg");
+  loadFont("assets/LEMONMILK-Regular.otf");
 
   gameStarted = false;
   gameEnded = false;
 
-  startButton = createButton("Start game");
-  startButton.position(canvasWidth / 2, canvasHeight / 2);
-  startButton.mousePressed(startGame);
-  startButton.style("padding", "10px");
-  startButton.style("font-family", "LEMON MILK");
+  startBtn = createButton("Play");
+  startBtn.position(canvasWidth / 2 - 90, 640);
+  startBtn.mousePressed(startGame);
+  startBtn.style("padding", "10px 50px");
+  startBtn.style("font-size", "48px");
+  startBtn.style("font-family", "LEMON MILK");
+  startBtn.style("cursor", "pointer");
+  startBtn.style("color", "#ffffff");
+  startBtn.style("background", "rgba(0,0,0,0)");
+  startBtn.style("border", "10px solid #ffffff");
+  startBtn.style("border-radius", "30px");
+  startBtn.style("box-shadow", "0px 0px 10px white");
 
   setup();
 }
@@ -68,8 +86,15 @@ function setup() {
   gameWon = false;
   gameEnded = false;
   gameTimer = 0;
+  highscores = [];
 
-  // Level generation
+  goalX = (Math.random() - 0.5) * asteroidRangeX * 0.9;
+  goalY = Math.random() * (asteroidRangeY * 0.9 + 7000) - 7000;
+
+  clearInterval(timer);
+  timer = setInterval(timerCount, 10);
+
+  // Create asteroids
   for (let i = 0; i < asteroidAmount; i++) {
     tempX = (Math.random() - 0.5) * asteroidRangeX;
     tempY = Math.random() * (asteroidRangeY + 300) - 300;
@@ -78,6 +103,8 @@ function setup() {
     asteroids.push(tempY);
     asteroids.push(randomSize);
   }
+
+  // Create mountains
   for (let j = 0; j < mountainAmount; j++) {
     tempX = (Math.random() - 0.5) * asteroidRangeX;
     tempY = 495 + Math.random() * 200;
@@ -86,11 +113,18 @@ function setup() {
     mountains.push(tempY);
     mountains.push(randomSize);
   }
-  goalX = (Math.random() - 0.5) * asteroidRangeX * 0.9;
-  goalY = Math.random() * (asteroidRangeY * 0.9 + 7000) - 7000;
 
-  clearInterval(timer);
-  timer = setInterval(timerCount, 10);
+  // Create stars
+  for (let i = 0; i < numStars; i++) {
+    stars.push(
+      new Star(Math.random() * canvasWidth, Math.random() * canvasHeight)
+    );
+  }
+
+  // Load highscores
+  for (let i = 0; i < 5; i++) {
+    highscores.push(getItem(i.toString()));
+  }
 }
 
 function draw() {
@@ -99,6 +133,18 @@ function draw() {
 
   background(7, 9, 10);
   image(bg, 0, asteroidRangeY + worldY + 2500);
+
+  stars = stars.filter((star) => {
+    star.draw();
+    star.update(0.2 + Math.abs(vel / 30));
+    return star.isActive();
+  });
+
+  while (stars.length < numStars) {
+    stars.push(
+      new Star(Math.random() * canvasWidth, Math.random() * canvasHeight)
+    );
+  }
 
   for (let i = 0; i < mountainAmount; i += 3) {
     push();
@@ -143,6 +189,10 @@ function update() {
 
   if (gameWon == false) collisionUpdate();
 
+  worldY -= Math.cos(playerRotation) * vel;
+  worldX += Math.sin(playerRotation) * vel;
+
+  // Asteroid movement
   for (let i = 0; i < asteroidAmount; i += 3) {
     if (asteroids[i] < -asteroidRangeX / 2) {
       asteroids[i] = asteroidRangeX / 2;
@@ -155,9 +205,6 @@ function update() {
       asteroids[i + 1] += asteroids[i + 2] / 40;
     }
   }
-
-  worldY -= Math.cos(playerRotation) * vel;
-  worldX += Math.sin(playerRotation) * vel;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -351,18 +398,33 @@ function drawTimer() {
 
 function startScreen() {
   push();
-  background(255, 0, 0);
+  image(coverImg, 0, 0);
   pop();
 }
 
 function endScreen() {
+  image(creditsImg, 0, 0);
+
   push();
-  background(0, 255, 0);
+  textFont("LEMON MILK");
+  textAlign(LEFT, CENTER);
+  noStroke();
+  fill(255, 255, 255);
+
+  textSize(32);
+  for (let i = 0; i < 5; i++) {
+    if (highscores[i] !== null) {
+      text(i + 1 + " - " + highscores[i], 75, 420 + 60 * i);
+    }
+  }
+
+  textSize(16);
+  text("Press backspace to play again", 75, 730);
   pop();
 }
 
 function startGame() {
-  startButton.remove();
+  startBtn.remove();
   gameStarted = true;
   setup();
 }
@@ -470,7 +532,7 @@ function moon() {
     -goalRadius / 2,
     goalRadius / 2 + (goalX + worldX) / 3,
     0,
-    0,
+    (goalX + worldX) / 6,
     0 + goalRadius / 2
   );
   bezierVertex(
@@ -604,28 +666,34 @@ function tree(x) {
   translate(x + worldX, 494 + worldY);
 
   noStroke();
-  fill(88, 128, 59);
+  fill(72, 94, 53);
+  ellipse(-20, -70, 57, 47);
+  ellipse(20, -60, 62, 52);
+  ellipse(10, -90, 67, 57);
+  fill(95, 148, 89);
   ellipse(-20, -70, 50, 40);
   ellipse(20, -60, 55, 45);
   ellipse(10, -90, 60, 50);
 
   noFill();
   stroke(135, 93, 55);
-  strokeWeight(20);
-  line(0, 0, 0, -10);
-  strokeWeight(12);
-  line(0, -10, 0, -50);
+  strokeWeight(14);
+  line(0, 0, 0, -50);
+  strokeWeight(7);
+  stroke(156, 107, 64);
+  line(4, 0, 4, -50);
+  stroke(135, 93, 55);
   strokeWeight(8);
   line(0, -50, -20, -70);
   line(0, -50, 10, -90);
   line(0, -50, 20, -60);
 
   noStroke();
-  fill(121, 196, 88, 80);
+  fill(121, 196, 88, 120);
   ellipse(-20, -70, 40, 30);
-  fill(172, 230, 129, 80);
+  fill(172, 230, 129, 120);
   ellipse(20, -60, 45, 35);
-  fill(109, 161, 69, 80);
+  fill(116, 171, 70, 120);
   ellipse(10, -90, 50, 40);
 
   fill(88, 128, 59);
@@ -633,6 +701,51 @@ function tree(x) {
   fill(112, 156, 81);
   ellipse(-70, 0, 50, 30);
   pop();
+}
+
+// The following class and its related code is implemented and edited from:
+// https://www.youtube.com/watch?v=p0I5bNVcYP8
+// https://editor.p5js.org/BarneyCodes/sketches/xR5Ct8F1N
+class Star {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.prevPos = createVector(x, y);
+
+    this.vel = createVector(0, 0);
+
+    this.ang = atan2(y - height / 2, x - width / 2);
+  }
+
+  isActive() {
+    return onScreen(this.prevPos.x, this.prevPos.y);
+  }
+
+  update(acc) {
+    this.vel.x += cos(this.ang) * acc;
+    this.vel.y += sin(this.ang) * acc;
+
+    this.prevPos.x = this.pos.x;
+    this.prevPos.y = this.pos.y;
+
+    this.pos.x += this.vel.x;
+    this.pos.y += this.vel.y;
+  }
+
+  draw() {
+    const alpha = map(
+      this.vel.mag(),
+      0,
+      3,
+      0,
+      10 * (Math.abs(worldY) / Math.abs(asteroidRangeY))
+    );
+    stroke(255, alpha);
+    line(this.pos.x, this.pos.y, this.prevPos.x, this.prevPos.y);
+  }
+}
+
+function onScreen(x, y) {
+  return x >= 0 && x <= width && y >= 0 && y <= height;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -682,16 +795,31 @@ function keyboardControlls() {
     setup();
   }
 
-  // Back to start screen
-  if (keyIsDown(ENTER) && gameWon == true) {
+  // End game
+  if (keyIsDown(ENTER) && gameWon == true && gameEnded == false) {
     gameEnded = true;
+
+    for (let i = 0; i < 5; i++) {
+      if (
+        getItem(i.toString()) === null ||
+        getItem(i.toString()) > gameTimer / 100
+      ) {
+        highscores.splice(i, 0, gameTimer / 100);
+        break;
+      }
+    }
+    for (let j = 0; j < 5; j++) {
+      storeItem(j.toString(), highscores[j]);
+    }
   }
 }
+
 function collisionUpdate() {
   let tempX;
   let tempY;
   let distance;
 
+  // Creating two ellipses to symbolise the player collision area
   let playerY1 =
     canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 75;
   let playerX1 =
@@ -703,6 +831,7 @@ function collisionUpdate() {
     canvasWidth / 2 - Math.sin(((playerRotation / PI) % 2) * PI) * 5;
 
   // Asteroid collision
+  // Checks the distance between the collision object and the collision box
   for (let i = 0; i < asteroidAmount; i += 3) {
     tempX = worldX + asteroids[i] - playerX1;
     tempY = worldY + asteroids[i + 1] - playerY1;
