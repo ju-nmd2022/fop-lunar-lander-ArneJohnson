@@ -5,7 +5,7 @@ const canvasHeight = 800;
 // Player variables
 let playerRotation;
 let vel;
-const maxSpeed = -20;
+const maxSpeed = -22;
 let isAlive;
 let isPlayerExplode;
 let isThrusting;
@@ -22,7 +22,7 @@ let mountains = [];
 const asteroidRadius = 80;
 const asteroidRangeX = 14000;
 const asteroidRangeY = -12000;
-const asteroidAmount = 1199;
+const asteroidAmount = 1124;
 const mountainAmount = 100;
 let bg;
 let gameWon;
