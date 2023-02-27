@@ -64,6 +64,7 @@ function preload() {
   startBtn.style("border", "10px solid #ffffff");
   startBtn.style("border-radius", "30px");
   startBtn.style("box-shadow", "0px 0px 10px white");
+  startBtn.style("display", "show");
 
   setup();
 }
@@ -168,7 +169,7 @@ function draw() {
     ship(playerRotation);
 
     if (gameWon == false) {
-      radar(goalX, goalY);
+      radar();
       drawTimer();
     } else {
       goalText();
@@ -297,7 +298,7 @@ function ship(playerRotation) {
   pop();
 }
 
-function radar(goalX, goalY) {
+function radar() {
   let radarRotation;
   let tempX = goalX - (canvasWidth / 2 - worldX);
   let tempY = goalY - (canvasHeight / 2 - worldY + goalRadius / 2);
@@ -424,7 +425,7 @@ function endScreen() {
 }
 
 function startGame() {
-  startBtn.remove();
+  startBtn.style("display", "none");
   gameStarted = true;
   setup();
 }
@@ -507,7 +508,6 @@ function createAsteroid(size) {
   pop();
 }
 
-// Moon and goal text
 function moon() {
   push();
   translate(goalX + worldX, goalY + worldY);
@@ -562,6 +562,7 @@ function moon() {
   fill(180, 180, 180, 50);
   ellipse(0, 0, goalRadius * 1.05);
 
+  // Landing marker
   if (gameWon == false) {
     fill(255, 180, 140, 150);
     noStroke();
@@ -751,6 +752,7 @@ function onScreen(x, y) {
 /* -------------------------------------------------------------------------- */
 /*                                Functionality                               */
 /* -------------------------------------------------------------------------- */
+
 function keyboardControlls() {
   if (isAlive && gameWon == false) {
     // Rotation
@@ -782,6 +784,7 @@ function keyboardControlls() {
       }
     }
 
+    // Braking
     if (keyIsDown(DOWN_ARROW) && keyIsDown(UP_ARROW) == false) {
       vel += 0.5;
       if (vel > 0) {
@@ -792,7 +795,8 @@ function keyboardControlls() {
 
   // Reset
   if (keyIsDown(BACKSPACE)) {
-    setup();
+    startBtn.remove();
+    preload();
   }
 
   // End game
@@ -882,7 +886,7 @@ function collisionUpdate() {
     return;
   }
 
-  // Landing
+  // Moon landing
   if (
     goalY + worldY - goalRadius < 0 &&
     goalY + worldY - goalRadius > -15 &&
