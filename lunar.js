@@ -5,7 +5,7 @@ const canvasHeight = 800;
 // Player variables
 let playerRotation;
 let vel;
-const maxSpeed = -22;
+const maxSpeed = -15;
 let isAlive;
 let isPlayerExplode;
 let isThrusting;
@@ -42,12 +42,9 @@ const numStars = 150;
 let stars = [];
 
 function preload() {
-  createCanvas(canvasWidth, canvasHeight);
-
   bg = loadImage("assets/Space.jpg");
   coverImg = loadImage("assets/cover.jpg");
   creditsImg = loadImage("assets/credits.jpg");
-  loadFont("assets/LEMONMILK-Regular.otf");
 
   gameStarted = false;
   gameEnded = false;
@@ -70,6 +67,8 @@ function preload() {
 }
 
 function setup() {
+  createCanvas(canvasWidth, canvasHeight);
+
   let tempX;
   let tempY;
   let randomSize;
@@ -161,7 +160,7 @@ function draw() {
     pop();
   }
 
-  floor();
+  ground();
   moon();
 
   // Player
@@ -198,12 +197,12 @@ function update() {
     if (asteroids[i] < -asteroidRangeX / 2) {
       asteroids[i] = asteroidRangeX / 2;
     } else {
-      asteroids[i] -= asteroids[i + 2] / 30;
+      asteroids[i] -= asteroids[i + 2] / 40;
     }
     if (asteroids[i + 1] > 0) {
       asteroids[i + 1] = asteroidRangeY;
     } else {
-      asteroids[i + 1] += asteroids[i + 2] / 40;
+      asteroids[i + 1] += asteroids[i + 2] / 50;
     }
   }
 }
@@ -389,7 +388,7 @@ function drawTimer() {
   strokeWeight(6);
   fill(255, 255, 255);
   textSize(24);
-  text(gameTimer / 100, 0, 0);
+  text(Math.round(gameTimer / 100), 0, 0);
   pop();
 }
 
@@ -434,7 +433,7 @@ function startGame() {
 /*                              Level functions                               */
 /* -------------------------------------------------------------------------- */
 
-function floor() {
+function ground() {
   push();
   stroke(95, 148, 89);
   strokeWeight(10);
@@ -904,7 +903,7 @@ function collisionUpdate() {
 }
 
 function timerCount() {
-  gameTimer++;
+  gameTimer += 5;
   if (gameWon == true || isAlive == false) {
     clearInterval(timer);
   }
