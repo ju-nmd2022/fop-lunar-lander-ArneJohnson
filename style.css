@@ -1,0 +1,17 @@
+body {
+  background-color: #07090a;
+}
+
+div {
+  width: 800px;
+  height: 800px;
+  margin-left: 25%;
+  margin-right: 25%;
+  border: 4px solid white;
+  box-shadow: 0px 0px 10px white;
+}
+
+button {
+  margin-left: 25%;
+  margin-right: 25%;
+}

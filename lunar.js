@@ -67,7 +67,8 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(canvasWidth, canvasHeight);
+  var canvas = createCanvas(canvasWidth, canvasHeight);
+  canvas.parent("myCanvas");
 
   let tempX;
   let tempY;
