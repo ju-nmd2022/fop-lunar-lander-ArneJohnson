@@ -1,6 +1,7 @@
 // Canvas variables
 const canvasWidth = 800;
 const canvasHeight = 800;
+const font = "Sarabun";
 
 // Player variables
 let playerRotation;
@@ -49,18 +50,9 @@ function preload() {
   gameStarted = false;
   gameEnded = false;
 
-  startBtn = createButton("Play");
-  startBtn.position(canvasWidth / 2 - 90, 640);
+  startBtn = createButton("PLAY");
   startBtn.mousePressed(startGame);
-  startBtn.style("padding", "10px 50px");
-  startBtn.style("font-size", "48px");
-  startBtn.style("font-family", "LEMON MILK");
-  startBtn.style("cursor", "pointer");
-  startBtn.style("color", "#ffffff");
-  startBtn.style("background", "rgba(0,0,0,0)");
-  startBtn.style("border", "10px solid #ffffff");
-  startBtn.style("border-radius", "30px");
-  startBtn.style("box-shadow", "0px 0px 10px white");
+  startBtn.style("font-family", font);
   startBtn.style("display", "show");
 
   setup();
@@ -344,7 +336,7 @@ function radar() {
   push();
   translate(canvasWidth / 2 + 75, canvasHeight / 2 - 10);
   textSize(18);
-  textFont("LEMON MILK");
+  textFont(font);
   textAlign(CENTER, CENTER);
   stroke(55, 55, 55);
   strokeWeight(4);
@@ -383,7 +375,7 @@ function explosion() {
 function drawTimer() {
   push();
   translate(canvasWidth - 100, 50);
-  textFont("LEMON MILK");
+  textFont(font);
   textAlign(LEFT, CENTER);
   stroke(55, 55, 55);
   strokeWeight(6);
@@ -407,7 +399,7 @@ function endScreen() {
   image(creditsImg, 0, 0);
 
   push();
-  textFont("LEMON MILK");
+  textFont(font);
   textAlign(LEFT, CENTER);
   noStroke();
   fill(255, 255, 255);
@@ -441,7 +433,7 @@ function ground() {
   fill(120, 180, 100);
   rect(-50, 500 + worldY, canvasWidth + 100, 350);
 
-  textFont("LEMON MILK");
+  textFont(font);
   textAlign(LEFT, CENTER);
   noStroke();
 
@@ -459,36 +451,42 @@ function ground() {
   rect(250 + worldX, 660 + worldY, 50);
   rect(370 + worldX, 660 + worldY, 50);
 
+  line(85 + worldX, 675 + worldY, 70 + worldX, 700 + worldY);
+  line(100 + worldX, 700 + worldY, 85 + worldX, 675 + worldY);
+  line(190 + worldX, 685 + worldY, 220 + worldX, 670 + worldY);
+  line(190 + worldX, 685 + worldY, 220 + worldX, 700 + worldY);
+  line(290 + worldX, 685 + worldY, 260 + worldX, 670 + worldY);
+  line(290 + worldX, 685 + worldY, 260 + worldX, 700 + worldY);
+  line(380 + worldX, 675 + worldY, 395 + worldX, 700 + worldY);
+  line(395 + worldX, 700 + worldY, 410 + worldX, 675 + worldY);
+
   fill(200, 255, 200);
   noStroke();
-  textSize(72);
-  text("^", 68 + worldX, 710 + worldY);
-  textSize(48);
-  text("<", 188 + worldX, 690 + worldY);
-  text(">", 258 + worldX, 690 + worldY);
-  textSize(36);
-  text("v", 380 + worldX, 690 + worldY);
-
-  textSize(14);
-  text("Thruster", 50 + worldX, 730 + worldY);
-  text("Rotate ship", 195 + worldX, 730 + worldY);
-  text("Brake", 370 + worldX, 730 + worldY);
-  text("Press backspace to restart", 50 + worldX, 780 + worldY);
+  textSize(16);
+  text("Thruster", 55 + worldX, 730 + worldY);
+  text("Rotate ship", 200 + worldX, 730 + worldY);
+  text("Brake", 375 + worldX, 730 + worldY);
+  text("Press backspace to restart", 50 + worldX, 770 + worldY);
   pop();
 }
 
 function gameOverText() {
   push();
-  translate(canvasWidth / 2, canvasHeight / 2);
-  textFont("LEMON MILK");
+  translate(canvasWidth / 2, canvasHeight / 2 - 50);
+  textFont(font);
   textAlign(CENTER, CENTER);
   stroke(55, 55, 55);
-  strokeWeight(8);
+  strokeWeight(5);
   fill(255, 255, 255);
-  textSize(36);
-  text("game over", 0, 0);
-  textSize(18);
+  textSize(42);
+  text("GAME OVER", 0, 0);
+  strokeWeight(4);
+  textSize(22);
   text("Press backspace to restart", 0, 40);
+  textSize(18);
+  strokeWeight(3);
+  fill(200, 200, 200);
+  text("Tip: Landing too fast counts as a crash", 0, 80);
   pop();
 }
 
@@ -641,10 +639,10 @@ function goalText() {
   endShape();
 
   translate(0, -canvasHeight - 30);
-  textFont("LEMON MILK");
+  textFont(font);
   textAlign(CENTER, CENTER);
-  stroke(55, 55, 55);
-  strokeWeight(8);
+  stroke(44, 44, 44);
+  strokeWeight(6);
   fill(255, 255, 255);
   textSize(36);
   text("Congratulations!", 0, 0);
