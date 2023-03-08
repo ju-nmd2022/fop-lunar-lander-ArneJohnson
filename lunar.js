@@ -6,7 +6,7 @@ const font = "Sarabun";
 // Player variables
 let playerRotation;
 let vel;
-const maxSpeed = -15;
+const maxSpeed = -20;
 let isAlive;
 let isPlayerExplode;
 let isThrusting;
@@ -60,6 +60,7 @@ function preload() {
 
 function setup() {
   var canvas = createCanvas(canvasWidth, canvasHeight);
+  frameRate(30);
   canvas.parent("myCanvas");
 
   let tempX;
@@ -85,7 +86,7 @@ function setup() {
   goalY = Math.random() * (asteroidRangeY * 0.9 + 7000) - 7000;
 
   clearInterval(timer);
-  timer = setInterval(timerCount, 10);
+  timer = setInterval(timerCount, 5);
 
   // Create asteroids
   for (let i = 0; i < asteroidAmount; i++) {
@@ -381,7 +382,7 @@ function drawTimer() {
   strokeWeight(6);
   fill(255, 255, 255);
   textSize(24);
-  text(Math.round(gameTimer / 100), 0, 0);
+  text(gameTimer / 10, 0, 0);
   pop();
 }
 
@@ -647,11 +648,7 @@ function goalText() {
   textSize(36);
   text("Congratulations!", 0, 0);
   textSize(18);
-  text(
-    "It took you " + gameTimer / 100 + " seconds to land on the moon",
-    0,
-    40
-  );
+  text("It took you " + gameTimer / 10 + " seconds to land on the moon", 0, 40);
   textSize(16);
   fill(255, 180, 140);
   strokeWeight(6);
@@ -902,7 +899,7 @@ function collisionUpdate() {
 }
 
 function timerCount() {
-  gameTimer += 5;
+  gameTimer += 1;
   if (gameWon == true || isAlive == false) {
     clearInterval(timer);
   }
