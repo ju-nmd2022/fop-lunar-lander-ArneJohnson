@@ -23,7 +23,7 @@ let mountains = [];
 const asteroidRadius = 80;
 const asteroidRangeX = 14000;
 const asteroidRangeY = -12000;
-const asteroidAmount = 1124;
+const asteroidAmount = 1049;
 const mountainAmount = 100;
 let bg;
 let gameWon;
@@ -86,7 +86,7 @@ function setup() {
   goalY = Math.random() * (asteroidRangeY * 0.9 + 7000) - 7000;
 
   clearInterval(timer);
-  timer = setInterval(timerCount, 5);
+  timer = setInterval(timerCount, 10);
 
   // Create asteroids
   for (let i = 0; i < asteroidAmount; i++) {
@@ -270,11 +270,13 @@ function ship(playerRotation) {
   endShape();
 
   if (isThrusting && gameWon == false) {
+    let thrustHeight = random(1, 10);
+
     fill(255, 80, 80);
     beginShape();
     vertex(0, 70);
-    bezierVertex(0, 70, 40, 70, 0, 120);
-    bezierVertex(0, 120, -40, 70, 0, 70);
+    bezierVertex(0, 70, 40, 70, 0, 120 + thrustHeight);
+    bezierVertex(0, 120 + thrustHeight, -40, 70, 0, 70);
     endShape();
 
     push();
@@ -283,8 +285,8 @@ function ship(playerRotation) {
     fill(240, 170, 80);
     beginShape();
     vertex(0, 70);
-    bezierVertex(0, 70, 40, 70, 0, 120);
-    bezierVertex(0, 120, -40, 70, 0, 70);
+    bezierVertex(0, 70, 40, 70, 0, 120 + thrustHeight / 2);
+    bezierVertex(0, 120 + thrustHeight / 2, -40, 70, 0, 70);
     endShape();
     pop();
   }
@@ -382,7 +384,7 @@ function drawTimer() {
   strokeWeight(6);
   fill(255, 255, 255);
   textSize(24);
-  text(gameTimer / 10, 0, 0);
+  text(gameTimer / 100, 0, 0);
   pop();
 }
 
@@ -648,7 +650,11 @@ function goalText() {
   textSize(36);
   text("Congratulations!", 0, 0);
   textSize(18);
-  text("It took you " + gameTimer / 10 + " seconds to land on the moon", 0, 40);
+  text(
+    "It took you " + gameTimer / 100 + " seconds to land on the moon",
+    0,
+    40
+  );
   textSize(16);
   fill(255, 180, 140);
   strokeWeight(6);
@@ -818,7 +824,8 @@ function collisionUpdate() {
   let tempY;
   let distance;
 
-  // Creating two ellipses to symbolise the player collision area
+  // Creating two points that rotate with the player.
+  // Checks the distance between each object and each point and determines if you collide based on if the distance is within the points range.
   let playerY1 =
     canvasHeight / 2 + 35 - Math.cos(((playerRotation / PI) % 2) * PI) * 75;
   let playerX1 =
@@ -899,7 +906,7 @@ function collisionUpdate() {
 }
 
 function timerCount() {
-  gameTimer += 1;
+  gameTimer += 3;
   if (gameWon == true || isAlive == false) {
     clearInterval(timer);
   }
