@@ -42,6 +42,10 @@ let creditsImg;
 const numStars = 150;
 let stars = [];
 
+// Sound
+let thrusterSound = new Audio("assets/thrusters_loop.mp3");
+let explosionSound = new Audio("assets/explosion.mp3");
+
 function preload() {
   bg = loadImage("assets/Space.jpg");
   coverImg = loadImage("assets/cover.jpg");
@@ -168,7 +172,10 @@ function draw() {
       goalText();
     }
   } else {
-    if (isPlayerExplode == false) explosion();
+    if (isPlayerExplode == false) {
+      explosionSound.play();
+      explosion();
+    }
 
     gameOverText();
   }
@@ -269,8 +276,12 @@ function ship(playerRotation) {
   bezierVertex(15, -30, 0, -40, -15, -30);
   endShape();
 
+  thrusterSound.pause();
+
   if (isThrusting && gameWon == false) {
     let thrustHeight = random(1, 10);
+
+    thrusterSound.play();
 
     fill(255, 80, 80);
     beginShape();
